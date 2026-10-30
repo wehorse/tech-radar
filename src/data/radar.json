@@ -429,6 +429,60 @@
       "description": "In-memory data store for caching and other low-latency workloads.",
       "url": "https://redis.io/",
       "rationale": "We completed the migration from Redis to Valkey. Use Valkey for new work."
+    },
+    {
+      "id": "aws-sns",
+      "name": "AWS SNS",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Managed publish-subscribe messaging service for notifications and event delivery.",
+      "url": "https://aws.amazon.com/sns/"
+    },
+    {
+      "id": "aws-sqs",
+      "name": "AWS SQS",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Managed message queues for asynchronous communication between applications and services.",
+      "url": "https://aws.amazon.com/sqs/"
+    },
+    {
+      "id": "aws-ecr",
+      "name": "AWS ECR",
+      "quadrant": "platforms",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Managed container registry for storing and distributing container images.",
+      "url": "https://aws.amazon.com/ecr/"
+    },
+    {
+      "id": "aws-s3",
+      "name": "AWS S3",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Object storage service for files, assets, and other application data.",
+      "url": "https://aws.amazon.com/s3/"
+    },
+    {
+      "id": "aws-bedrock",
+      "name": "AWS Bedrock",
+      "quadrant": "platforms",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Managed access to foundation models for building generative AI applications.",
+      "url": "https://aws.amazon.com/bedrock/"
+    },
+    {
+      "id": "aws-mediaconvert",
+      "name": "AWS Elemental MediaConvert",
+      "quadrant": "platforms",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Managed file-based video transcoding service for preparing on-demand video.",
+      "url": "https://aws.amazon.com/mediaconvert/"
     }
   ],
   "reviewedAt": "2026-10-30"
