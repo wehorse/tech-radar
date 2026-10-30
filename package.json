@@ -1,0 +1,21 @@
+{
+  "name": "wehorse-tech-radar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "check": "tsc --noEmit && node scripts/validate-data.ts",
+    "test": "node --test tests/*.test.ts",
+    "build": "npm run check && vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^8.0.0"
+  },
+  "license": "UNLICENSED"
+}

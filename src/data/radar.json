@@ -1,0 +1,435 @@
+{
+  "title": "Tech Radar",
+  "edition": "2026.10",
+  "isExample": false,
+  "entries": [
+    {
+      "id": "php",
+      "name": "PHP",
+      "quadrant": "languages",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Server-side programming language for web applications.",
+      "url": "https://www.php.net/"
+    },
+    {
+      "id": "symfony",
+      "name": "Symfony",
+      "quadrant": "languages",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "PHP framework and reusable components for web applications and services.",
+      "url": "https://symfony.com/"
+    },
+    {
+      "id": "amazon-elasticache",
+      "name": "AWS ElastiCache",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "AWS managed in-memory caching service supporting engines including Valkey.",
+      "url": "https://aws.amazon.com/elasticache/"
+    },
+    {
+      "id": "amazon-ecs",
+      "name": "AWS ECS",
+      "quadrant": "platforms",
+      "ring": "adopt",
+      "movement": "new",
+      "description": "AWS Elastic Container Service: managed orchestration for containerized applications. The target platform for our migration from AWS App Runner and AWS Elastic Beanstalk.",
+      "url": "https://aws.amazon.com/ecs/"
+    },
+    {
+      "id": "valkey",
+      "name": "Valkey",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Open-source in-memory data store for caching and other low-latency data workloads.",
+      "url": "https://valkey.io/"
+    },
+    {
+      "id": "nextjs",
+      "name": "Next.js",
+      "quadrant": "languages",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "React framework for building web applications with server-side and client-side rendering.",
+      "url": "https://nextjs.org/"
+    },
+    {
+      "id": "react",
+      "name": "React",
+      "quadrant": "languages",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Library for building user interfaces from reusable components.",
+      "url": "https://react.dev/"
+    },
+    {
+      "id": "react-native",
+      "name": "React Native",
+      "quadrant": "languages",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Framework for building native applications using React.",
+      "url": "https://reactnative.dev/"
+    },
+    {
+      "id": "typescript",
+      "name": "TypeScript",
+      "quadrant": "languages",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Programming language that adds static types to JavaScript.",
+      "url": "https://www.typescriptlang.org/"
+    },
+    {
+      "id": "chromatic",
+      "name": "Chromatic",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Visual regression testing and review tool for detecting changes to user interfaces.",
+      "url": "https://www.chromatic.com/"
+    },
+    {
+      "id": "javascript",
+      "name": "JavaScript",
+      "quadrant": "languages",
+      "ring": "hold",
+      "movement": "unchanged",
+      "description": "Programming language for web applications. On Hold for new work in the wehorse radar; TypeScript is in Adopt.",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript"
+    },
+    {
+      "id": "aws-app-runner",
+      "name": "AWS App Runner",
+      "quadrant": "platforms",
+      "ring": "hold",
+      "movement": "unchanged",
+      "description": "AWS service for deploying web applications from source code or container images.",
+      "url": "https://aws.amazon.com/apprunner/",
+      "migrationTo": "amazon-ecs",
+      "rationale": "We are migrating these workloads to AWS ECS. Avoid new deployments on App Runner."
+    },
+    {
+      "id": "aws-elastic-beanstalk",
+      "name": "AWS Elastic Beanstalk",
+      "quadrant": "platforms",
+      "ring": "hold",
+      "movement": "unchanged",
+      "description": "AWS service for deploying and managing web applications and their infrastructure.",
+      "url": "https://aws.amazon.com/elasticbeanstalk/",
+      "migrationTo": "amazon-ecs",
+      "rationale": "We are migrating these workloads to AWS ECS. Avoid new deployments on Elastic Beanstalk."
+    },
+    {
+      "id": "qodana",
+      "name": "Qodana",
+      "quadrant": "tools",
+      "ring": "hold",
+      "movement": "unchanged",
+      "description": "JetBrains static code analysis platform for code quality and security checks.",
+      "url": "https://www.jetbrains.com/qodana/"
+    },
+    {
+      "id": "sonarqube",
+      "name": "SonarQube",
+      "quadrant": "tools",
+      "ring": "hold",
+      "movement": "unchanged",
+      "description": "Code analysis platform for code quality and security checks.",
+      "url": "https://www.sonarsource.com/products/sonarqube/"
+    },
+    {
+      "id": "kanban",
+      "name": "Kanban",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Our current method for organizing and managing work. We use Kanban instead of Scrum."
+    },
+    {
+      "id": "scrum",
+      "name": "Scrum",
+      "quadrant": "tools",
+      "ring": "hold",
+      "movement": "unchanged",
+      "description": "We have stopped using Scrum and now use Kanban to organize and manage our work.",
+      "replacedBy": "kanban"
+    },
+    {
+      "id": "bigquery",
+      "name": "BigQuery",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "We use BigQuery for data analytics.",
+      "url": "https://cloud.google.com/bigquery"
+    },
+    {
+      "id": "codex",
+      "name": "Codex",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "We use Codex for AI-assisted software development.",
+      "url": "https://openai.com/codex/"
+    },
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "We use Claude Code for AI-assisted software development.",
+      "url": "https://code.claude.com/docs/en/overview"
+    },
+    {
+      "id": "terraform",
+      "name": "Terraform",
+      "quadrant": "platforms",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Our adopted infrastructure-as-code tool. We are gradually replacing AWS CloudFormation with Terraform over the long term.",
+      "url": "https://developer.hashicorp.com/terraform"
+    },
+    {
+      "id": "aws-cloudformation",
+      "name": "AWS CloudFormation",
+      "quadrant": "platforms",
+      "ring": "hold",
+      "movement": "unchanged",
+      "description": "AWS infrastructure-as-code service.",
+      "migrationTo": "terraform",
+      "url": "https://aws.amazon.com/cloudformation/",
+      "rationale": "We are gradually replacing CloudFormation with Terraform. Existing stacks remain in use during the transition."
+    },
+    {
+      "id": "elasticsearch",
+      "name": "Elasticsearch",
+      "quadrant": "data",
+      "ring": "hold",
+      "movement": "unchanged",
+      "description": "Search and analytics engine.",
+      "replacedBy": "opensearch",
+      "url": "https://www.elastic.co/elasticsearch",
+      "rationale": "We completed the migration to OpenSearch, which now handles our search workloads."
+    },
+    {
+      "id": "opensearch",
+      "name": "OpenSearch",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Our adopted search engine, replacing Elasticsearch. The migration is complete.",
+      "url": "https://opensearch.org/"
+    },
+    {
+      "id": "appium",
+      "name": "Appium",
+      "quadrant": "tools",
+      "ring": "trial",
+      "movement": "unchanged",
+      "description": "Automation framework for mobile end-to-end tests, with WebdriverIO as our test runner.",
+      "url": "https://appium.io/",
+      "rationale": "We are trialing this setup in real projects. It is not yet fully adopted."
+    },
+    {
+      "id": "aws-kinesis-data-streams",
+      "name": "AWS Kinesis Data Streams",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "new",
+      "description": "Newly introduced for streaming event data.",
+      "url": "https://aws.amazon.com/kinesis/data-streams/"
+    },
+    {
+      "id": "expo",
+      "name": "Expo",
+      "quadrant": "platforms",
+      "ring": "hold",
+      "movement": "unchanged",
+      "description": "We have phased out Expo and no longer actively use it. It is on Hold for new work.",
+      "url": "https://expo.dev/"
+    },
+    {
+      "id": "aws-lambda",
+      "name": "AWS Lambda",
+      "quadrant": "platforms",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "An adopted service for running functions without managing servers. We have had good experience with AWS Lambda.",
+      "url": "https://aws.amazon.com/lambda/"
+    },
+    {
+      "id": "aws-step-functions",
+      "name": "AWS Step Functions",
+      "quadrant": "platforms",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "An adopted service for coordinating workflows. We have had very good experience with AWS Step Functions.",
+      "url": "https://aws.amazon.com/step-functions/"
+    },
+    {
+      "id": "aws-glue",
+      "name": "AWS Glue",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "An adopted and heavily used service for data integration and ETL.",
+      "url": "https://aws.amazon.com/glue/"
+    },
+    {
+      "id": "aws-rds",
+      "name": "AWS RDS",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "We use AWS RDS to host relational databases, including MySQL and PostgreSQL.",
+      "url": "https://aws.amazon.com/rds/"
+    },
+    {
+      "id": "mysql",
+      "name": "MySQL",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "One of our adopted relational database engines, used with AWS RDS.",
+      "url": "https://www.mysql.com/"
+    },
+    {
+      "id": "postgresql",
+      "name": "PostgreSQL",
+      "quadrant": "data",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "One of our adopted relational database engines, used with AWS RDS.",
+      "url": "https://www.postgresql.org/"
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "We actively use GitHub for source code hosting and collaboration alongside Bitbucket.",
+      "url": "https://github.com/"
+    },
+    {
+      "id": "bitbucket",
+      "name": "Bitbucket",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "We actively use Bitbucket for source code hosting and collaboration alongside GitHub.",
+      "url": "https://bitbucket.org/"
+    },
+    {
+      "id": "frankenphp",
+      "name": "FrankenPHP",
+      "quadrant": "platforms",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "PHP application server.",
+      "url": "https://frankenphp.dev/",
+      "rationale": "Our standard for every new PHP application."
+    },
+    {
+      "id": "docker",
+      "name": "Docker",
+      "quadrant": "platforms",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Fully adopted for building and running containerized applications.",
+      "url": "https://www.docker.com/"
+    },
+    {
+      "id": "angular",
+      "name": "Angular",
+      "quadrant": "languages",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Framework for building web applications.",
+      "url": "https://angular.dev/",
+      "rationale": "Adopted for our internal admin user interfaces."
+    },
+    {
+      "id": "bitbucket-pipelines",
+      "name": "Bitbucket Pipelines",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Our go-to CI/CD service for building, checking, and delivering applications.",
+      "url": "https://bitbucket.org/product/features/pipelines"
+    },
+    {
+      "id": "symfony-messenger",
+      "name": "Symfony Messenger",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Our go-to component for message handling and asynchronous processing.",
+      "url": "https://symfony.com/doc/current/messenger.html"
+    },
+    {
+      "id": "doctrine-orm",
+      "name": "Doctrine ORM",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Our adopted object-relational mapper for PHP applications.",
+      "url": "https://www.doctrine-project.org/projects/orm.html"
+    },
+    {
+      "id": "phpstan",
+      "name": "PHPStan",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Our go-to tool for static analysis of PHP code.",
+      "url": "https://phpstan.org/"
+    },
+    {
+      "id": "phpunit",
+      "name": "PHPUnit",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "Our go-to framework for automated PHP testing.",
+      "url": "https://phpunit.de/"
+    },
+    {
+      "id": "aws-ivs",
+      "name": "AWS IVS",
+      "quadrant": "platforms",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "AWS service for interactive video streaming.",
+      "url": "https://aws.amazon.com/ivs/",
+      "rationale": "Adopted for livestreams and chat on the wehorse platform."
+    },
+    {
+      "id": "sentry",
+      "name": "Sentry",
+      "quadrant": "tools",
+      "ring": "adopt",
+      "movement": "unchanged",
+      "description": "An established and strongly recommended tool for error monitoring across our applications.",
+      "url": "https://sentry.io/"
+    },
+    {
+      "id": "redis",
+      "name": "Redis",
+      "quadrant": "data",
+      "ring": "hold",
+      "movement": "unchanged",
+      "replacedBy": "valkey",
+      "description": "In-memory data store for caching and other low-latency workloads.",
+      "url": "https://redis.io/",
+      "rationale": "We completed the migration from Redis to Valkey. Use Valkey for new work."
+    }
+  ],
+  "reviewedAt": "2026-10-30"
+}
