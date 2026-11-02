@@ -1,6 +1,8 @@
 # wehorse Tech Radar
 
-A tech radar for keeping track of what your team uses, what you're trying, and what you're moving away from. Each saved decision creates a snapshot, so you can look back at an earlier stack or play through its changes.
+[Open the live tech radar](https://wehorse.github.io/tech-radar/)
+
+A tech radar for keeping track of what your team uses, what you're trying, and what you're moving away from. Group related decisions into revisions, then look back at an earlier stack or play through its changes.
 
 It runs as a static site. There is no server or shared editing account: edits stay in your browser until you export and publish them.
 
@@ -60,7 +62,7 @@ The app reads `src/data/history.json`. Replace the included history with a first
 }
 ```
 
-Do this before recording your team's decisions. Once you have a history, add new snapshots to correct or change it rather than rewriting old ones. Each snapshot needs a unique ID and a UTC timestamp later than the previous snapshot.
+Do this before recording your team's decisions. Each revision needs a unique ID and a UTC timestamp later than the previous revision. The UI can create revisions or edit existing ones, keeping an edit log with their previous contents.
 
 `src/data/radar.json` is the original test fixture. Editing it won't change the radar shown in the app. Some tests in `tests/history.test.ts` also use specific entries from the included history; adjust those fixtures when replacing the starting stack.
 
@@ -85,14 +87,18 @@ The rings mean:
 
 ## Add, move, or retire a technology
 
-Changes can be made from the latest recorded snapshot. Past snapshots and the demo are read-only.
+You can edit any recorded revision. The demo is read-only. Every change form has a **Save to revision** selector: keep the selected revision, choose another one, or choose **Create a new revision**. A new revision starts from the latest stack.
 
-- **Add:** choose **Add technology**, fill in its name, area, ring, and description, then explain why you're adding it. Save to create a snapshot.
+- **Add:** choose **Add technology**, fill in its name, area, ring, and description, then explain why you're adding it. Choose the revision and save.
 - **Update or move:** select a technology and choose **Update technology**. Change its details, area, or ring and leave a decision note. Movement markers are worked out from the previous snapshot.
 - **Record a migration:** add the destination technology first. Then update the old technology, choose **Migrating to…**, and select the destination. When the migration is done, use **Replaced by…**. Set the adoption ring separately.
-- **Archive:** choose **Archive** in the technology's details and record why. It leaves the current radar but stays in earlier snapshots. If other entries point to it as a migration or replacement destination, update those references first.
+- **Archive:** choose **Archive** in the technology's details and record why. It leaves the chosen revision; the other revisions keep their own contents. If other entries point to it as a migration or replacement destination, update those references first.
 
-Each save keeps the full stack and its decision note. Renaming an entry preserves its identity. Adding an archived name again creates a new entry rather than restoring the old one.
+To group three changes, save the first one to a new revision, then save the next two to that same revision. You get one timeline point with all three changes. You can set its title in the form.
+
+Editing an older revision changes that revision only. Later revisions are not automatically updated. When updating an existing technology, the selector only offers revisions where it exists; switching revisions reloads that revision's saved details.
+
+Revision IDs and original dates stay the same when edited. Each edit keeps its note and the previous title, notes, and stack. Open **Revision edits** in the snapshot summary to read the notes; the full previous contents are included in JSON exports. Renaming a technology preserves its identity. Adding an archived name again creates a new entry rather than restoring the old one.
 
 ## Save and share changes
 
@@ -105,7 +111,7 @@ To publish your changes:
 3. Run `npm run check` and review the changes in Git.
 4. Commit the file and rebuild or redeploy the site.
 
-**Import** accepts a history that extends the one you already have. It won't replace an unrelated radar or change earlier snapshots. If two people make different changes from the same version, agree on one history and reapply the other decisions before importing or publishing.
+**Import** accepts new revisions and revision edits that preserve your current history. It refuses unrelated histories, removed revisions, missing edit logs, and conflicting changes. If two people edit the same revision independently, agree on one history and reapply the other decisions before importing or publishing.
 
 Links preserve the selected snapshot, filters, and technology. A link to a browser-only snapshot won't show that version for someone else until they have imported it or it has been published.
 

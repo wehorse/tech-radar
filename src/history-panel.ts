@@ -1,4 +1,4 @@
-import { assertExtension, commitSnapshot, demoHistory, diffSnapshots, snapshotAtDate, snapshotData, validateHistory } from "./history.ts";
+import { assertExtension, commitSnapshot, demoHistory, diffSnapshots, snapshotAtDate, snapshotData, validateHistory, resolveHistory, reviseSnapshot } from "./history.ts";
 import type { RadarHistory } from "./history.ts";
 import { layoutEntries } from "./layout.ts";
 import type { Blip } from "./layout.ts";
@@ -16,10 +16,7 @@ export function loadHistory(base: RadarHistory): { history: RadarHistory; warnin
     if (!saved) return { history: base, warning: "" };
     const value: unknown = JSON.parse(saved);
     validateHistory(value);
-    // Published history may have caught up with browser drafts, or vice versa.
-    const [short, long] = base.snapshots.length <= value.snapshots.length ? [base, value] : [value, base];
-    assertExtension(short, long);
-    return { history: long, warning: "" };
+    return { history: resolveHistory(base, value), warning: "" };
   } catch {
     return { history: base, warning: "Browser history could not be loaded or differs from the published history. The recorded stack is shown; existing browser data is kept until you save." };
   }
@@ -51,6 +48,7 @@ export function setupHistory(
   let editing: Entry | undefined;
   let archiving = false;
   let speed = 1;
+  let autoRevisionTitle = false;
 
   document.querySelector(".header-meta")!.insertAdjacentHTML("beforeend", `
     <div class="history-actions"><button id="demo-toggle" class="header-button header-button-secondary">Demo history</button><button id="add-technology" class="header-button header-button-primary"><svg class="header-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg><span>Add technology</span></button></div>
@@ -70,7 +68,7 @@ export function setupHistory(
             <div id="snapshot-stats" class="snapshot-stats"></div>
             <div class="changes-heading"><h4>What changed</h4></div>
             <div id="snapshot-changes" class="snapshot-changes"></div>
-            <p id="comparison-label" class="comparison-label"></p>
+            <p id="comparison-label" class="comparison-label"></p><div id="revision-edits"></div>
             <div class="snapshot-storage"><span class="storage-dot"></span><span id="storage-label"></span><div><button id="export-history">Export JSON ↗</button><button id="import-history">Import</button><input type="file" id="history-file" accept="application/json,.json" hidden></div></div>
           </div>
         </details>
@@ -81,8 +79,9 @@ export function setupHistory(
   `);
   document.querySelector("#app")!.insertAdjacentHTML("beforeend", `
     <dialog id="editor-dialog" aria-labelledby="editor-title"><button id="close-editor" class="close-dialog" aria-label="Close editor">×</button><p class="overline">RECORD A DECISION</p><h2 id="editor-title"></h2><p id="editor-explanation" class="editor-explanation"></p><form id="technology-form">
+      <div class="revision-fields"><label>Save to revision<select name="revision" required></select></label><label>Revision title<input name="revisionTitle" required maxlength="120"></label><p id="revision-hint"></p></div>
       <div id="entry-fields"><label>Technology name<input name="name" required maxlength="100"></label><div class="form-columns"><label>Area<select name="quadrant">${quadrants.map((item) => `<option value="${item.id}">${item.name}</option>`).join("")}</select></label><label>Adoption ring<select name="ring">${rings.map((item) => `<option value="${item.id}">${item.name}</option>`).join("")}</select></label></div><label>What do we use it for?<textarea name="description" rows="3" required maxlength="2000"></textarea></label><label>Official website <span>(optional)</span><input name="url" type="url" placeholder="https://…"></label><div class="form-columns"><label>Transition<select name="transition"><option value="none">No transition</option><option value="migrationTo">Migrating to…</option><option value="replacedBy">Replaced by…</option></select></label><label id="transition-target-label">Destination<select name="destination"></select></label></div></div>
-      <label>Decision note <span>Why are we making this change?</span><textarea name="reason" rows="3" required maxlength="2000" placeholder="The context that future us will need…"></textarea></label><p id="editor-error" class="form-error" role="alert" hidden></p><div class="editor-footer"><span id="editor-version"></span><button type="submit" class="primary-button" id="save-snapshot">Save snapshot ↗</button></div>
+      <label>Decision note <span>Why are we making this change?</span><textarea name="reason" rows="3" required maxlength="2000" placeholder="The context that future us will need…"></textarea></label><p id="editor-error" class="form-error" role="alert" hidden></p><div class="editor-footer"><span id="editor-version"></span><button type="submit" class="primary-button" id="save-snapshot">Save revision</button></div>
     </form></dialog>
   `);
 
@@ -92,7 +91,7 @@ export function setupHistory(
   const text = (selector: string, value: string) => { $(selector).textContent = value; };
   const notice = (message: string) => { text("#history-notice", message); $("#history-notice").hidden = !message; };
   const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-  const canEdit = () => !demo && selected === active.snapshots.length - 1;
+  const canEdit = () => !demo;
   const snapshotPanel = $<HTMLDetailsElement>(".snapshot-panel");
   document.addEventListener("pointerdown", (event) => {
     if (event.target instanceof Node && !snapshotPanel.contains(event.target)) snapshotPanel.open = false;
@@ -128,6 +127,7 @@ export function setupHistory(
     text("#snapshot-summary-date", dateLabel(snapshot.createdAt, { day: "numeric", month: "short" }));
     text("#snapshot-date", dateLabel(snapshot.createdAt, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " UTC");
     text("#snapshot-reason", snapshot.reason);
+    $("#revision-edits").innerHTML = snapshot.edits?.length ? `<details class="revision-edit-log"><summary>Revision edits · ${snapshot.edits.length}</summary><ol>${[...snapshot.edits].reverse().map((edit) => `<li><time>${h(dateLabel(edit.createdAt, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" }))} UTC</time><p>${h(edit.reason)}</p></li>`).join("")}</ol></details>` : "";
     $("#snapshot-stats").innerHTML = `<div><strong>${snapshot.data.entries.length}</strong><span>technologies</span></div><div><strong>${changes.length}</strong><span>${previous ? "changes" : "baseline"}</span></div>`;
     text("#change-count", previous ? `${changes.length} change${changes.length === 1 ? "" : "s"}` : "Baseline");
     $("#snapshot-changes").innerHTML = changes.length ? changes.map((change) => {
@@ -142,7 +142,7 @@ export function setupHistory(
     $("#demo-notice").hidden = !demo;
     text("#demo-toggle", demo ? "Back to stack" : "Demo history");
     $("#add-technology").toggleAttribute("disabled", !canEdit());
-    $("#add-technology").title = canEdit() ? "Record a new technology" : "Return to the latest recorded snapshot to make changes";
+    $("#add-technology").title = canEdit() ? "Add a technology to a revision" : "Demo history is read-only";
     $("#import-history").toggleAttribute("disabled", demo);
     $("#export-history").toggleAttribute("disabled", demo);
     text("#storage-label", demo ? "Demo only · no changes saved" : "Browser drafts · export to share with the team");
@@ -192,7 +192,7 @@ export function setupHistory(
     layouts = historyLayouts(active);
     select(active.snapshots.length - 1, false);
   }
-  function save(next: RadarHistory) {
+  function save(next: RadarHistory, selectedId = next.snapshots.at(-1)!.id) {
     // Prove every historical state can be rendered before persisting anything.
     const nextLayouts = historyLayouts(next);
     const stored = localStorage.getItem(storageKey);
@@ -204,30 +204,62 @@ export function setupHistory(
     }
     localStorage.setItem(storageKey, JSON.stringify(next));
     recorded = next; active = next; layouts = nextLayouts;
-    stop(); select(active.snapshots.length - 1);
-    notice("Snapshot saved in this browser. Export the history to share it or commit it to Git.");
+    stop(); select(active.snapshots.findIndex((snapshot) => snapshot.id === selectedId));
+    notice("Revision saved in this browser. Export the history to share it or commit it to Git.");
   }
-  function edit(entry?: Entry, archive = false) {
-    stop(); render();
-    if (!canEdit()) { notice("Open the latest recorded snapshot to make a new decision."); return; }
-    editing = entry; archiving = archive;
-    form.reset();
-    text("#editor-title", archive ? `Archive ${entry!.name}` : entry ? `Update ${entry.name}` : "Add a technology");
-    text("#editor-explanation", archive ? "It will leave the active radar. Its previous versions and decision history will remain available in earlier snapshots." : "Save one decision as a new snapshot. Previous versions are kept exactly as they were.");
-    $("#entry-fields").hidden = archive;
-    for (const element of form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("#entry-fields input, #entry-fields select, #entry-fields textarea")) element.disabled = archive;
+  function targetSnapshot() {
+    return field("revision").value === "__new__" ? recorded.snapshots.at(-1)! :
+      recorded.snapshots.find((snapshot) => snapshot.id === field("revision").value)!;
+  }
+  function suggestedTitle() {
+    const name = field("name").value.trim();
+    return archiving ? `${editing!.name} archived` : !editing ?
+      name ? `${name} joins the radar` : "New revision" : editing.ring !== field("ring").value ?
+      `${name}: ${editing.ring} → ${field("ring").value}` : `${name} updated`;
+  }
+  function populateTechnology(entry?: Entry) {
     field("name").value = entry?.name ?? "";
     field("quadrant").value = entry?.quadrant ?? "languages";
     field("ring").value = entry?.ring ?? "assess";
     field("description").value = entry?.description ?? "";
     field("url").value = entry?.url ?? "";
     field("transition").value = entry?.migrationTo ? "migrationTo" : entry?.replacedBy ? "replacedBy" : "none";
-    field("destination").innerHTML = `<option value="">Select a technology</option>${active.snapshots.at(-1)!.data.entries.filter((item) => item.id !== entry?.id).map((item) => `<option value="${item.id}">${h(item.name)}</option>`).join("")}`;
-    field("destination").value = entry?.migrationTo ?? entry?.replacedBy ?? "";
+    populateDestinations(entry?.migrationTo ?? entry?.replacedBy ?? "");
+  }
+  function populateDestinations(value = field("destination").value) {
+    field("destination").innerHTML = `<option value="">Select a technology</option>${targetSnapshot().data.entries.filter((item) => item.id !== editing?.id).map((item) => `<option value="${item.id}">${h(item.name)}</option>`).join("")}`;
+    field("destination").value = value;
     updateDestination();
-    text("#editor-version", `Creates snapshot v${String(active.snapshots.length + 1).padStart(2, "0")}`);
-    text("#save-snapshot", archive ? "Archive & save snapshot" : "Save snapshot ↗");
+  }
+  function revisionChoiceChanged() {
+    const target = targetSnapshot();
+    if (editing) {
+      editing = target.data.entries.find((entry) => entry.id === editing!.id)!;
+      populateTechnology(editing);
+    } else populateDestinations();
+    autoRevisionTitle = field("revision").value === "__new__";
+    field("revisionTitle").value = autoRevisionTitle ? suggestedTitle() : target.title;
+    const version = `v${String(recorded.snapshots.indexOf(target) + 1).padStart(2, "0")}`;
+    text("#revision-hint", autoRevisionTitle ? "Creates a new revision from the latest stack." :
+      `Updates ${version} only. Later revisions keep their own contents.${editing ? " Switching revisions reloads the saved technology details." : ""}`);
+    text("#editor-version", autoRevisionTitle ? `Creates v${String(recorded.snapshots.length + 1).padStart(2, "0")}` : `Updates ${version} · no new timeline point`);
+    text("#save-snapshot", autoRevisionTitle ? "Create revision" : `Save to ${version}`);
     $("#editor-error").hidden = true;
+  }
+  function edit(entry?: Entry, archive = false) {
+    stop(); render();
+    if (!canEdit()) { notice("Demo history is read-only."); return; }
+    editing = entry; archiving = archive;
+    form.reset();
+    text("#editor-title", archive ? `Archive ${entry!.name}` : entry ? `Update ${entry.name}` : "Add a technology");
+    text("#editor-explanation", archive ? "Removes it from the chosen revision. Previous contents are kept in the revision edit history." : "Choose a revision for this change, or create a new one.");
+    $("#entry-fields").hidden = archive;
+    for (const element of form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("#entry-fields input, #entry-fields select, #entry-fields textarea")) element.disabled = archive;
+    const available = (entries: Entry[]) => !entry || entries.some((item) => item.id === entry.id);
+    field("revision").innerHTML = `<option value="__new__" ${available(recorded.snapshots.at(-1)!.data.entries) ? "" : "disabled"}>Create a new revision${available(recorded.snapshots.at(-1)!.data.entries) ? "" : " (technology absent from latest)"}</option><optgroup label="Existing revisions">${[...recorded.snapshots].reverse().map((snapshot) => `<option value="${snapshot.id}" ${available(snapshot.data.entries) ? "" : "disabled"}>v${String(recorded.snapshots.indexOf(snapshot) + 1).padStart(2, "0")} · ${h(snapshot.title)} · ${h(dateLabel(snapshot.createdAt))}</option>`).join("")}</optgroup>`;
+    field("revision").value = recorded.snapshots[selected].id;
+    populateTechnology(entry);
+    revisionChoiceChanged();
     document.querySelector<HTMLDialogElement>("#entry-dialog")!.close();
     editor.showModal();
   }
@@ -237,22 +269,28 @@ export function setupHistory(
     field("destination").disabled = !needed;
     (field("destination") as HTMLSelectElement).required = needed;
   }
-  form.addEventListener("change", updateDestination);
+  form.addEventListener("change", (event) => {
+    if (event.target === field("revision")) revisionChoiceChanged();
+    else updateDestination();
+  });
+  form.addEventListener("input", (event) => {
+    if (event.target === field("revisionTitle")) autoRevisionTitle = false;
+    else if (autoRevisionTitle) field("revisionTitle").value = suggestedTitle();
+  });
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     try {
-      const latest = active.snapshots.at(-1)!.data;
-      let entries = structuredClone(latest.entries);
-      let title: string;
+      if (demo) throw new Error("Demo history is read-only.");
+      const target = targetSnapshot();
+      let entries = structuredClone(target.data.entries);
       if (archiving) {
         const dependents = entries.filter((item) => item.migrationTo === editing!.id || item.replacedBy === editing!.id);
         if (dependents.length) throw new Error(`Update the transition destination for ${dependents.map((item) => item.name).join(", ")} before archiving this technology.`);
         entries = entries.filter((item) => item.id !== editing!.id);
-        title = `${editing!.name} archived`;
       } else {
         const name = field("name").value.trim();
         const slug = name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "technology";
-        const reserved = new Set(active.snapshots.flatMap((snapshot) => snapshot.data.entries.map((item) => item.id)));
+        const reserved = new Set(recorded.snapshots.flatMap((snapshot) => [snapshot.data, ...(snapshot.edits ?? []).map((edit) => edit.previous.data)].flatMap((data) => data.entries.map((item) => item.id))));
         let id = slug;
         for (let suffix = 2; reserved.has(id); suffix++) id = `${slug}-${suffix}`;
         const next: Entry = { ...(editing ?? {}), id: editing?.id ?? id, name, quadrant: field("quadrant").value as QuadrantId,
@@ -261,11 +299,13 @@ export function setupHistory(
         if (field("url").value.trim()) next.url = field("url").value.trim();
         const transition = field("transition").value;
         if (transition === "migrationTo" || transition === "replacedBy") next[transition] = field("destination").value;
-        title = !editing ? `${name} joins the radar` : editing.ring !== next.ring ? `${name}: ${editing.ring} → ${next.ring}` : `${name} updated`;
         if (editing) entries = entries.map((item) => item.id === editing!.id ? next : item);
         else entries.push(next);
       }
-      save(commitSnapshot(recorded, entries, title, field("reason").value));
+      const next = field("revision").value === "__new__" ?
+        commitSnapshot(recorded, entries, field("revisionTitle").value, field("reason").value) :
+        reviseSnapshot(recorded, target.id, entries, field("revisionTitle").value, field("reason").value);
+      save(next, field("revision").value === "__new__" ? next.snapshots.at(-1)!.id : target.id);
       editor.close();
     } catch (error) {
       text("#editor-error", error instanceof Error ? error.message : "Could not save. Export your history and try again.");
@@ -337,7 +377,7 @@ export function setupHistory(
       if (!change && index !== 0) return [];
       return [`<li><button data-snapshot-index="${index}"><time>${h(dateLabel(snapshot.createdAt))}</time><strong>${index === 0 ? "Recorded in baseline" : change?.kind === "removed" ? "Archived" : change?.kind === "added" ? "Added to radar" : change?.kind === "moved" ? `${h(before!.ring)} → ${h(current!.ring)}` : "Decision updated"}</strong></button><p>${h(snapshot.reason)}</p></li>`];
     });
-    return `<section class="entry-history"><h3>Decision history ${demo ? "· Demo" : ""}</h3><ol>${events.reverse().join("")}</ol></section>${canEdit() ? `<div class="entry-edit-actions"><button id="edit-technology" data-id="${entry.id}" class="primary-button">Update technology ↗</button><button id="archive-technology" data-id="${entry.id}" class="quiet-button">Archive</button></div>` : '<p class="historical-note">Viewing a past or demo snapshot. Open the latest recorded version to make changes.</p>'}`;
+    return `<section class="entry-history"><h3>Decision history ${demo ? "· Demo" : ""}</h3><ol>${events.reverse().join("")}</ol></section>${canEdit() ? `<div class="entry-edit-actions"><button id="edit-technology" data-id="${entry.id}" class="primary-button">Update technology ↗</button><button id="archive-technology" data-id="${entry.id}" class="quiet-button">Archive</button></div>` : '<p class="historical-note">Demo history is read-only.</p>'}`;
   }
   render();
   return { restore, detailHistory, pause: () => { stop(); render(); } };

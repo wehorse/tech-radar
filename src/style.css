@@ -1044,3 +1044,15 @@ button.change-row:hover { background: #f5f7f0; }
   .editor-footer { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; scroll-behavior: auto !important; } }
+
+.revision-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 12px; margin-bottom: 20px; padding: 14px; border: 1px solid #dfe6d7; border-radius: 6px; background: #f6f8f1; }
+#technology-form .revision-fields label { margin-bottom: 0; }
+#revision-hint { grid-column: 1 / -1; margin: 0; color: #7b876f; font-size: 10px; line-height: 1.6; }
+#snapshot-reason { white-space: pre-line; }
+.revision-edit-log { margin-bottom: 14px; border-top: 1px solid #edf0e8; padding-top: 12px; font-size: 10px; color: #6f7f60; }
+.revision-edit-log summary { cursor: pointer; }
+.revision-edit-log ol { list-style: none; margin: 12px 0 0; padding: 0; }
+.revision-edit-log li { border-left: 1px solid #dce5d2; padding: 0 0 12px 10px; }
+.revision-edit-log time { color: #929b88; font-size: 9px; }
+.revision-edit-log p { margin: 5px 0 0; line-height: 1.6; white-space: pre-line; }
+@media (max-width: 620px) { .revision-fields { grid-template-columns: 1fr; } }
