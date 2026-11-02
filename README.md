@@ -15,7 +15,7 @@ npm run dev
 
 Open the local address printed by Vite, usually [http://127.0.0.1:5173](http://127.0.0.1:5173).
 
-The included radar contains wehorse's stack, with two snapshots taken from its Git history. **Explore demo history** opens a separate, read-only example with several months of changes.
+The included radar contains wehorse's stack, with two snapshots taken from its Git history. **Demo history** opens a separate, read-only example with several months of changes.
 
 ## Use it for your own team
 

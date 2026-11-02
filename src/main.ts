@@ -36,10 +36,9 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
   <a class="skip-link" href="#explore">Skip to radar</a>
   <header class="site-header">
-    <a href="./" aria-label="wehorse home"><img class="logo" src="${import.meta.env.BASE_URL}assets/wehorse-logo.svg" alt="wehorse" width="142" height="40"></a>
-    <h1>${h(data.title)}</h1>
+    <div class="header-brand"><a href="./" aria-label="wehorse home"><img class="logo" src="${import.meta.env.BASE_URL}assets/wehorse-logo.svg" alt="wehorse" width="128" height="30"></a><h1>${h(data.title)}</h1></div>
     <div class="header-meta">
-      <details class="help"><summary>About the rings</summary><div class="help-content">${rings.map((item) => `<p>${badge(item.id)}<br>${item.description}</p>`).join("")}</div></details>
+      <details class="help"><summary aria-label="About the rings" title="About the rings"><svg class="header-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M6.4 6a1.6 1.6 0 0 1 3.2 0c0 1.2-1.6 1.2-1.6 2.5" stroke-linecap="round"/><circle cx="8" cy="11" r=".7" fill="currentColor" stroke="none"/></svg><span class="help-label">About the rings</span></summary><div class="help-content">${rings.map((item) => `<p>${badge(item.id)}<br>${item.description}</p>`).join("")}</div></details>
     </div>
   </header>
   <main id="explore">

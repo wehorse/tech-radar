@@ -53,7 +53,7 @@ export function setupHistory(
   let speed = 1;
 
   document.querySelector(".header-meta")!.insertAdjacentHTML("beforeend", `
-    <div class="history-actions"><button id="demo-toggle" class="quiet-button">↗ Explore demo history</button><button id="add-technology" class="primary-button"><span aria-hidden="true">＋</span> Add technology</button></div>
+    <div class="history-actions"><button id="demo-toggle" class="header-button header-button-secondary">Demo history</button><button id="add-technology" class="header-button header-button-primary"><svg class="header-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg><span>Add technology</span></button></div>
   `);
   document.querySelector("main")!.insertAdjacentHTML("afterbegin", `
     <div id="history-notice" class="history-notice" role="status" ${warning ? "" : "hidden"}>${h(warning)}</div>
@@ -140,7 +140,7 @@ export function setupHistory(
     }).join("") : `<div class="baseline-message"><span aria-hidden="true">◎</span><strong>${previous ? "No stack changes" : "A starting point for every decision."}</strong><p>${previous ? "This snapshot records the same stack." : "Add or update a technology to create the next snapshot. Every earlier version stays intact."}</p>${active.snapshots.length === 1 ? '<button id="try-playback">Explore the demo timeline ↗</button>' : ""}</div>`;
     text("#comparison-label", previous ? `Compared with ${dateLabel(previous.createdAt)} · ${added} added, ${moved} moved, ${removed} archived` : "First recorded snapshot · no earlier comparison");
     $("#demo-notice").hidden = !demo;
-    text("#demo-toggle", demo ? "← Back to our stack" : "↗ Explore demo history");
+    text("#demo-toggle", demo ? "Back to stack" : "Demo history");
     $("#add-technology").toggleAttribute("disabled", !canEdit());
     $("#add-technology").title = canEdit() ? "Record a new technology" : "Return to the latest recorded snapshot to make changes";
     $("#import-history").toggleAttribute("disabled", demo);
