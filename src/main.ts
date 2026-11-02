@@ -1,23 +1,26 @@
-import rawData from "./data/radar.json";
+import rawHistory from "./data/history.json";
+import { validateHistory } from "./history.ts";
+import { loadHistory, historyLayouts, setupHistory } from "./history-panel.ts";
+import { transitionRadar } from "./radar-transition.ts";
+import { setupRadarZoom } from "./radar-zoom.ts";
 import {
   filterEntries,
   getEntryStatus,
   movements,
   quadrants,
   rings,
-  validateData,
 } from "./model.ts";
-import type { Entry, QuadrantId, RadarData, RingId } from "./model.ts";
-import { layoutEntries } from "./layout.ts";
+import type { Entry, QuadrantId, RingId } from "./model.ts";
 import { areaViewBox, renderRadar } from "./radar.ts";
 import { readViewState, writeViewState } from "./url-state.ts";
 import { setupCatalogPanel } from "./catalog-panel.ts";
 import { escapeHtml as h } from "./html.ts";
 import "./style.css";
 
-validateData(rawData);
-const data: RadarData = rawData;
-const blips = layoutEntries(data.entries);
+validateHistory(rawHistory);
+const loaded = loadHistory(rawHistory);
+let data = loaded.history.snapshots.at(-1)!.data;
+let blips = historyLayouts(loaded.history).at(-1)!;
 let quadrant: QuadrantId | "all" = "all";
 let ring: RingId | "all" = "all";
 let query = "";
@@ -35,16 +38,14 @@ app.innerHTML = `
   <header class="site-header">
     <a href="./" aria-label="wehorse home"><img class="logo" src="${import.meta.env.BASE_URL}assets/wehorse-logo.svg" alt="wehorse" width="142" height="40"></a>
     <h1>${h(data.title)}</h1>
-    <div class="header-meta">${data.isExample ? '<span class="example-label">Example data</span>' : `<span>${h(data.edition)}</span>`}
-      <details class="help"><summary>About the rings</summary><div class="help-content">${rings.map((item) => `<p>${badge(item.id)}<br>${item.description}</p>`).join("")}<a href="https://opensource.zalando.com/tech-radar/">Inspired by Zalando’s Tech Radar ↗</a></div></details>
-      <a href="https://github.com/wehorse/tech-radar" class="source-link">GitHub ↗</a>
-      <a href="https://www.wehorse.com/de/impressum" hreflang="de">Legal notice</a>
+    <div class="header-meta">
+      <details class="help"><summary>About the rings</summary><div class="help-content">${rings.map((item) => `<p>${badge(item.id)}<br>${item.description}</p>`).join("")}</div></details>
     </div>
   </header>
   <main id="explore">
     <div class="quadrant-filters" role="group" aria-label="Technology area"><button class="area-button selected" data-quadrant="all" aria-pressed="true">All technologies</button>${quadrants.map((item) => `<button class="area-button" data-quadrant="${item.id}" aria-pressed="false">${item.short}</button>`).join("")}</div>
     <div class="workspace">
-      <section class="radar-panel" aria-label="Technology radar"><div id="radar-container">${renderRadar(blips)}</div><div id="movement-legend" class="radar-caption" aria-label="Movement legend"></div></section>
+      <section class="radar-panel" aria-label="Technology radar"><div class="radar-viewport" tabindex="0" aria-label="Radar canvas; scroll to pan when zoomed"><div id="radar-container">${renderRadar(blips)}</div></div><div id="movement-legend" class="radar-caption" aria-label="Movement legend"></div><div class="radar-zoom" role="group" aria-label="Radar zoom"><button id="radar-zoom-out" aria-label="Zoom out" disabled>−</button><button id="radar-zoom-fit" aria-label="Fit radar to view">Fit</button><button id="radar-zoom-in" aria-label="Zoom in">＋</button></div></section>
       <div id="catalog-drawer" class="catalog-drawer">
         <button id="catalog-toggle" class="catalog-toggle" aria-expanded="false" aria-controls="technology-catalog"><span aria-hidden="true">☰</span> Technologies <span id="catalog-filter-count">${data.entries.length}</span></button>
         <aside id="technology-catalog" class="catalog" aria-label="Technologies" aria-hidden="true" inert>
@@ -54,6 +55,7 @@ app.innerHTML = `
       </div>
     </div>
   </main>
+  <footer class="site-footer"><a href="https://www.wehorse.com/de/impressum" hreflang="de">Legal notice</a></footer>
   <dialog id="entry-dialog" aria-labelledby="detail-title"><button class="close-dialog" aria-label="Close technology details">×</button><div id="detail-content"></div></dialog>
 `;
 
@@ -61,6 +63,7 @@ const list = document.querySelector<HTMLDivElement>("#entry-list")!;
 const dialog = document.querySelector<HTMLDialogElement>("#entry-dialog")!;
 const search = document.querySelector<HTMLInputElement>("#search")!;
 const catalogPanel = setupCatalogPanel();
+setupRadarZoom();
 
 function syncUrl(push = false): void {
   const url = writeViewState(
@@ -166,6 +169,7 @@ function update(writeUrl = true): void {
 }
 
 function openEntry(entry: Entry, trigger: Element, writeUrl = true): void {
+  historyPanel.pause();
   technology = entry.id;
   if (writeUrl) syncUrl(true);
   lastTrigger = trigger;
@@ -179,6 +183,7 @@ function openEntry(entry: Entry, trigger: Element, writeUrl = true): void {
   }).format(new Date(reviewedAt));
   document.querySelector("#detail-content")!.innerHTML =
     `<p class="eyebrow">${h(area.name)}</p><h2 id="detail-title">${h(entry.name)}</h2><div class="detail-meta">${badge(entry.ring)}${getEntryStatus(entry, data.entries) ? `<span class="${entry.migrationTo || entry.replacedBy ? "transition-status" : ""}">${h(getEntryStatus(entry, data.entries))}</span>` : ""}</div>${data.isExample ? '<p class="detail-example">Illustrative entry · not an assessment of our stack</p>' : ""}<p class="detail-description">${h(entry.description)}</p>${entry.rationale ? `<div class="detail-decision"><h3>Our decision</h3><p>${h(entry.rationale)}</p></div>` : ""}<div class="detail-ring"><h3>${ringInfo.action}</h3><p>${ringInfo.description}</p></div>${entry.url ? `<a class="detail-link" href="${h(entry.url)}" target="_blank" rel="noopener noreferrer">Visit official website ${arrow}</a>` : ""}<div class="detail-footer"><span>Reviewed <time datetime="${reviewedAt}">${reviewedDate}</time></span><button id="copy-link" aria-live="polite">Copy link</button></div><input id="share-url" aria-label="Technology link" readonly hidden>`;
+  document.querySelector("#detail-content")!.insertAdjacentHTML("beforeend", historyPanel.detailHistory(entry));
   if (!dialog.open) dialog.showModal();
 }
 
@@ -203,11 +208,9 @@ app.addEventListener("click", async (event) => {
     ring = ringButton.dataset.ring as typeof ring;
     update();
   }
-  if (entryButton && !entryButton.classList.contains("dimmed"))
-    openEntry(
-      data.entries.find((entry) => entry.id === entryButton.dataset.entry)!,
-      entryButton,
-    );
+  const selectedEntry = data.entries.find((entry) => entry.id === entryButton?.dataset.entry);
+  if (entryButton && selectedEntry && !entryButton.classList.contains("dimmed"))
+    openEntry(selectedEntry, entryButton);
   if (target.closest("#reset, [data-reset]")) reset();
   if (target.closest(".close-dialog")) dialog.close();
   const copy = target.closest<HTMLButtonElement>("#copy-link");
@@ -288,7 +291,17 @@ app.addEventListener("pointerleave", () =>
     .querySelectorAll(".highlighted")
     .forEach((el) => el.classList.remove("highlighted")),
 );
+const historyPanel = setupHistory(loaded.history, loaded.warning, (next, points, animate) => {
+  const previous = blips;
+  data = next;
+  blips = points;
+  technology = null;
+  transitionRadar(previous, blips, animate);
+  update(false);
+});
+
 function restoreView(): void {
+  historyPanel.restore();
   const state = readViewState(location.search, data.entries);
   quadrant = state.quadrant;
   ring = state.ring;

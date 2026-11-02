@@ -1,31 +1,135 @@
 # wehorse Tech Radar
 
-Our engineering technology choices and adoption status.
+A tech radar for keeping track of what your team uses, what you're trying, and what you're moving away from. Each saved decision creates a snapshot, so you can look back at an earlier stack or play through its changes.
 
-## Run locally
+It runs as a static site. There is no server or shared editing account: edits stay in your browser until you export and publish them.
 
-Requires Node.js 24 or later.
+## Run it locally
+
+You'll need Node.js 24 or later. If you use nvm, `nvm use` selects the version in `.nvmrc`.
 
 ```sh
-nvm use
 npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:5173.
+Open the local address printed by Vite, usually [http://127.0.0.1:5173](http://127.0.0.1:5173).
 
-## Checks and build
+The included radar contains wehorse's stack, with two snapshots taken from its Git history. **Explore demo history** opens a separate, read-only example with several months of changes.
+
+## Use it for your own team
+
+You can reuse the code, documentation, and radar data under the [MIT License](LICENSE). The wehorse logo is excluded: remove or replace `public/assets/wehorse-logo.svg` in your copy. The full terms are in [LICENSING.md](LICENSING.md).
+
+### Replace the branding
+
+These are the places to change:
+
+| File | What to change |
+| --- | --- |
+| `src/main.ts` | Logo image, logo alt text, home link label, and legal notice link. |
+| `index.html` | Browser tab title, page description, and fallback text. |
+| `public/favicon.svg` | Browser icon, if you want your own. |
+| `src/history-panel.ts` | Give `storageKey` a name for your radar. This keeps it separate from other radars you've run at the same browser address. |
+| `package.json` | Project name. Update the matching name in `package-lock.json` too. |
+
+The demo in `src/history.ts` uses wehorse-specific technology IDs and sample decisions. Adapt it to your data, or remove the demo controls and their handlers from `src/history-panel.ts`.
+
+### Start with your own stack
+
+The app reads `src/data/history.json`. Replace the included history with a first snapshot for your team. This example starts empty; you can then add technologies through the UI. Use your actual starting date and a title of your own.
+
+```json
+{
+  "schemaVersion": 1,
+  "snapshots": [
+    {
+      "id": "initial",
+      "createdAt": "2026-11-02T00:00:00.000Z",
+      "title": "Initial stack",
+      "reason": "Starting our technology history.",
+      "data": {
+        "title": "Team Tech Radar",
+        "edition": "2026.11",
+        "isExample": false,
+        "reviewedAt": "2026-11-02",
+        "entries": []
+      }
+    }
+  ]
+}
+```
+
+Do this before recording your team's decisions. Once you have a history, add new snapshots to correct or change it rather than rewriting old ones. Each snapshot needs a unique ID and a UTC timestamp later than the previous snapshot.
+
+`src/data/radar.json` is the original test fixture. Editing it won't change the radar shown in the app. Some tests in `tests/history.test.ts` also use specific entries from the included history; adjust those fixtures when replacing the starting stack.
+
+You can rename the area and ring labels in `src/model.ts`. Keep their IDs unless you also update the data and code that refer to them.
+
+## Use the radar
+
+The latest snapshot opens by default. Select an earlier point on the timeline, use the date picker, or press **Play** to see changes over time. A date between snapshots shows the last saved version on or before that day. Playing from the latest snapshot starts again at the beginning.
+
+Select a technology on the chart to read its description and decision history. The **Technologies** panel has search and ring filters; the tabs above the chart focus on an area. Use **＋** and **−** to zoom, scroll to pan, and **Fit** to reset the view.
+
+Open the snapshot summary in the timeline bar to see its decision note, change list, and import/export buttons.
+
+The rings mean:
+
+| Ring | How we use it |
+| --- | --- |
+| Adopt | A default choice for new work. |
+| Trial | Being tried in real projects. |
+| Assess | Worth investigating before committing to it. |
+| Hold | Avoid for new work; existing use may continue. |
+
+## Add, move, or retire a technology
+
+Changes can be made from the latest recorded snapshot. Past snapshots and the demo are read-only.
+
+- **Add:** choose **Add technology**, fill in its name, area, ring, and description, then explain why you're adding it. Save to create a snapshot.
+- **Update or move:** select a technology and choose **Update technology**. Change its details, area, or ring and leave a decision note. Movement markers are worked out from the previous snapshot.
+- **Record a migration:** add the destination technology first. Then update the old technology, choose **Migrating to…**, and select the destination. When the migration is done, use **Replaced by…**. Set the adoption ring separately.
+- **Archive:** choose **Archive** in the technology's details and record why. It leaves the current radar but stays in earlier snapshots. If other entries point to it as a migration or replacement destination, update those references first.
+
+Each save keeps the full stack and its decision note. Renaming an entry preserves its identity. Adding an archived name again creates a new entry rather than restoring the old one.
+
+## Save and share changes
+
+**Saving in the UI only saves to this browser.** It survives a reload, but it doesn't update the repository or anyone else's copy. Export your history before clearing site data or moving to another browser.
+
+To publish your changes:
+
+1. Open the snapshot summary and choose **Export JSON**.
+2. Replace `src/data/history.json` with the downloaded file.
+3. Run `npm run check` and review the changes in Git.
+4. Commit the file and rebuild or redeploy the site.
+
+**Import** accepts a history that extends the one you already have. It won't replace an unrelated radar or change earlier snapshots. If two people make different changes from the same version, agree on one history and reapply the other decisions before importing or publishing.
+
+Links preserve the selected snapshot, filters, and technology. A link to a browser-only snapshot won't show that version for someone else until they have imported it or it has been published.
+
+## Build and deploy
 
 ```sh
+npm run check
 npm test
 npm run build
 npm run preview
 ```
 
-## Update the radar
+The build goes into `dist/` and includes the license notices. You can host that directory on a static web server.
 
-Edit `src/data/radar.json`. Update `edition` and `reviewedAt` for each review, and set movement markers relative to the previous edition.
+The included [GitHub Actions workflow](.github/workflows/ci.yml) runs checks and deploys pushes to `master` to GitHub Pages. Enable Pages with GitHub Actions as its source. If your fork uses another default branch, change the branch filters and conditions in the workflow.
 
-## Deploy
+For a site served under a subpath, pass it when building:
 
-In GitHub **Settings → Pages**, select **GitHub Actions** as the source. Pushes to `master` run checks and deploy the site. The production output is `dist/`.
+```sh
+npm run build -- --base=/your-repo/
+```
+
+Published radar data is included in the site's files. Anyone who can access the site can read it. The app has no built-in sign-in or server-side permissions; use hosting access controls if the stack should stay internal.
+
+## AI use
+
+AI tools were used to generate and edit code in this repository. Review and test the code before relying on it in your own projects.

@@ -12,7 +12,7 @@ export interface Blip {
 
 // Fixed slots keep blips stable when filtering and leave room for keyboard focus rings.
 // Reject overcrowded sectors instead of silently stacking technologies on each other.
-export function layoutEntries(entries: Entry[]): Blip[] {
+export function layoutEntries(entries: Entry[], previous: Blip[] = [], numbers?: Map<string, number>): Blip[] {
   const slots = new Map<string, { x: number; y: number }[]>();
   for (const [q, quadrant] of quadrants.entries()) {
     for (const [r, ring] of rings.entries()) {
@@ -61,16 +61,21 @@ export function layoutEntries(entries: Entry[]): Blip[] {
       slots.set(`${quadrant.id}:${ring.id}`, spread);
     }
   }
-  const used = new Map<string, number>();
+  const retained = new Map<string, Blip>();
+  for (const entry of entries) {
+    const old = previous.find((point) => point.entry.id === entry.id);
+    if (!old || old.entry.ring !== entry.ring || old.entry.quadrant !== entry.quadrant) continue;
+    retained.set(entry.id, old);
+    const key = `${entry.quadrant}:${entry.ring}`;
+    slots.set(key, slots.get(key)!.filter((point) => point.x !== old.x || point.y !== old.y));
+  }
   return entries.map((entry, index) => {
     const key = `${entry.quadrant}:${entry.ring}`;
-    const count = used.get(key) ?? 0;
-    const point = slots.get(key)?.[count];
+    const point = retained.get(entry.id) ?? slots.get(key)?.shift();
     if (!point)
       throw new Error(
         `Too many entries in ${key}; increase the radar layout capacity before adding more.`,
       );
-    used.set(key, count + 1);
-    return { entry, number: index + 1, ...point };
+    return { x: point.x, y: point.y, entry, number: numbers?.get(entry.id) ?? index + 1 };
   });
 }
