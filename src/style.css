@@ -846,7 +846,8 @@ main { padding: 0 24px 8px; }
 .quiet-button:hover { background: #f1f4ec; }
 button:disabled { opacity: .38; cursor: default; }
 button:disabled:hover { filter: none; }
-.history-notice { padding: 11px 14px; border: 1px solid #d9e3cc; background: #f0f5e9; font-size: 12px; line-height: 1.6; margin-bottom: 12px; border-radius: 5px; }
+.history-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; border: 1px solid #d9e3cc; background: #f0f5e9; font-size: 12px; line-height: 1.6; margin-bottom: 12px; border-radius: 5px; }
+#undo-discard { border: 0; background: transparent; color: #426b32; padding: 4px; text-decoration: underline; font-size: 12px; flex-shrink: 0; }
 .demo-notice { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 11px 14px; background: #fbf3df; color: #8b682d; font-size: 11px; line-height: 1.5; border: 1px solid #efdfb9; border-radius: 5px; margin-bottom: 10px; }
 .demo-notice button { background: transparent; border: 0; color: inherit; font-size: 11px; white-space: nowrap; }
 .quadrant-filters { min-height: 44px; gap: 22px; padding: 3px 0; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
@@ -886,8 +887,19 @@ button.change-row:hover { background: #f5f7f0; }
 .comparison-label { font-size: 9px; color: #949b8d; line-height: 1.6; margin: 9px 0 20px; }
 .snapshot-storage { margin-top: auto; border-top: 1px solid #edf0e8; padding-top: 14px; font-size: 9px; line-height: 1.7; color: #989e91; }
 .storage-dot { width: 5px; height: 5px; display: inline-block; background: #9ab17f; border-radius: 50%; margin-right: 4px; }
-.snapshot-storage > div { display: flex; gap: 16px; margin-top: 7px; }
-.snapshot-storage button { padding: 0; background: transparent; border: 0; color: #668050; font-size: 10px; }
+.storage-status { display: flex; align-items: center; gap: 6px; margin: 0; }
+.storage-status .storage-dot { margin-right: 0; }
+.storage-actions { display: grid; gap: 8px; margin-top: 12px; }
+.storage-file-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.storage-action { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 6px 12px; background: #fff; border: 1px solid #dfe4d9; border-radius: 5px; color: #606d58; font-size: 11px; line-height: 1.4; }
+.storage-action:not(:disabled):hover { background: #f5f7f1; border-color: #cad5bf; }
+.storage-action-danger { color: #9b5645; border-color: #e7d8d2; }
+.storage-action-danger:not(:disabled):hover { background: #fcf1ed; border-color: #d7b6aa; }
+#discard-dialog { width: min(430px, calc(100% - 32px)); border-radius: 8px; }
+#discard-dialog h2 { font-size: 21px; margin-bottom: 14px; }
+#discard-description { color: #77816d; font-size: 12px; line-height: 1.7; }
+.discard-dialog-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+.discard-dialog-actions button { min-height: 34px; padding: 8px 12px; }
 .baseline-message { padding: 16px 0 2px; color: #86917e; }
 .baseline-message > span { display: block; color: #92ad7b; font-size: 28px; margin-bottom: 15px; }
 .baseline-message strong { font-size: 11px; font-weight: 500; color: #617155; }

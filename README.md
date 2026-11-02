@@ -104,6 +104,8 @@ Revision IDs and original dates stay the same when edited. Each edit keeps its n
 
 **Saving in the UI only saves to this browser.** It survives a reload, but it doesn't update the repository or anyone else's copy. Export your history before clearing site data or moving to another browser.
 
+**Discard edits** in the snapshot summary restores the published history and removes this browser's drafts. You can cancel the confirmation or use **Undo** afterward, until your next save or page reload.
+
 To publish your changes:
 
 1. Open the snapshot summary and choose **Export JSON**.

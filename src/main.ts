@@ -297,7 +297,7 @@ const historyPanel = setupHistory(loaded.history, loaded.warning, (next, points,
   technology = null;
   transitionRadar(previous, blips, animate);
   update(false);
-});
+}, rawHistory);
 
 function restoreView(): void {
   historyPanel.restore();

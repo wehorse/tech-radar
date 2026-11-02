@@ -5,6 +5,7 @@ import type { Blip } from "./layout.ts";
 import { quadrants, rings } from "./model.ts";
 import type { Entry, RadarData, QuadrantId, RingId } from "./model.ts";
 import { escapeHtml as h } from "./html.ts";
+import { discardBrowserDrafts, hasLocalDrafts } from "./history-storage.ts";
 
 const storageKey = "wehorse-radar-history-v1";
 const dateLabel = (date: string, options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" }) =>
@@ -37,6 +38,7 @@ export function setupHistory(
   initial: RadarHistory,
   warning: string,
   onSelect: (data: RadarData, blips: Blip[], animate: boolean) => void,
+  published: RadarHistory = initial,
 ) {
   let recorded = initial;
   let demo = false;
@@ -49,12 +51,14 @@ export function setupHistory(
   let archiving = false;
   let speed = 1;
   let autoRevisionTitle = false;
+  let discardExpected: string | null = null;
+  let discarded: { history: RadarHistory; stored: string | null; selectedId: string } | undefined;
 
   document.querySelector(".header-meta")!.insertAdjacentHTML("beforeend", `
     <div class="history-actions"><button id="demo-toggle" class="header-button header-button-secondary">Demo history</button><button id="add-technology" class="header-button header-button-primary"><svg class="header-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg><span>Add technology</span></button></div>
   `);
   document.querySelector("main")!.insertAdjacentHTML("afterbegin", `
-    <div id="history-notice" class="history-notice" role="status" ${warning ? "" : "hidden"}>${h(warning)}</div>
+    <div id="history-notice" class="history-notice" role="status" ${warning ? "" : "hidden"}><span id="history-notice-message">${h(warning)}</span><button id="undo-discard" hidden>Undo</button></div>
     <div id="demo-notice" class="demo-notice" hidden><span><strong>Demo history</strong> · Illustrative changes, May–October 2026. Your recorded stack is separate.</span><button id="exit-demo">Back to our stack ↗</button></div>
   `);
   document.querySelector(".workspace")!.insertAdjacentHTML("afterend", `
@@ -69,7 +73,7 @@ export function setupHistory(
             <div class="changes-heading"><h4>What changed</h4></div>
             <div id="snapshot-changes" class="snapshot-changes"></div>
             <p id="comparison-label" class="comparison-label"></p><div id="revision-edits"></div>
-            <div class="snapshot-storage"><span class="storage-dot"></span><span id="storage-label"></span><div><button id="export-history">Export JSON ↗</button><button id="import-history">Import</button><input type="file" id="history-file" accept="application/json,.json" hidden></div></div>
+            <div class="snapshot-storage"><p class="storage-status"><span class="storage-dot"></span><span id="storage-label"></span></p><div class="storage-actions"><button id="discard-history" class="storage-action storage-action-danger">Discard edits</button><div class="storage-file-actions"><button id="export-history" class="storage-action">Export JSON</button><button id="import-history" class="storage-action">Import</button></div></div><input type="file" id="history-file" accept="application/json,.json" hidden></div>
           </div>
         </details>
         <div class="timeline-navigation"><label class="date-jump"><input id="snapshot-date-jump" type="date" aria-label="Jump to snapshot on or before date"></label><button id="go-latest" class="quiet-button">Latest ↗</button><span id="playback-status" role="status" aria-live="polite"></span></div>
@@ -78,6 +82,7 @@ export function setupHistory(
     </section>
   `);
   document.querySelector("#app")!.insertAdjacentHTML("beforeend", `
+    <dialog id="discard-dialog" aria-labelledby="discard-title" aria-describedby="discard-description"><h2 id="discard-title">Discard browser edits?</h2><p id="discard-description">Return to the published radar. Local revision changes and imported drafts will be removed from this browser. You can undo this until your next save or page reload.</p><p id="discard-error" class="form-error" role="alert" hidden></p><div class="discard-dialog-actions"><button id="cancel-discard" class="quiet-button" autofocus>Keep edits</button><button id="confirm-discard" class="storage-action storage-action-danger">Discard edits</button></div></dialog>
     <dialog id="editor-dialog" aria-labelledby="editor-title"><button id="close-editor" class="close-dialog" aria-label="Close editor">×</button><p class="overline">RECORD A DECISION</p><h2 id="editor-title"></h2><p id="editor-explanation" class="editor-explanation"></p><form id="technology-form">
       <div class="revision-fields"><label>Save to revision<select name="revision" required></select></label><label>Revision title<input name="revisionTitle" required maxlength="120"></label><p id="revision-hint"></p></div>
       <div id="entry-fields"><label>Technology name<input name="name" required maxlength="100"></label><div class="form-columns"><label>Area<select name="quadrant">${quadrants.map((item) => `<option value="${item.id}">${item.name}</option>`).join("")}</select></label><label>Adoption ring<select name="ring">${rings.map((item) => `<option value="${item.id}">${item.name}</option>`).join("")}</select></label></div><label>What do we use it for?<textarea name="description" rows="3" required maxlength="2000"></textarea></label><label>Official website <span>(optional)</span><input name="url" type="url" placeholder="https://…"></label><div class="form-columns"><label>Transition<select name="transition"><option value="none">No transition</option><option value="migrationTo">Migrating to…</option><option value="replacedBy">Replaced by…</option></select></label><label id="transition-target-label">Destination<select name="destination"></select></label></div></div>
@@ -89,12 +94,13 @@ export function setupHistory(
   const form = document.querySelector<HTMLFormElement>("#technology-form")!;
   const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
   const text = (selector: string, value: string) => { $(selector).textContent = value; };
-  const notice = (message: string) => { text("#history-notice", message); $("#history-notice").hidden = !message; };
+  const notice = (message: string, undo = !!discarded) => { text("#history-notice-message", message); $("#history-notice").hidden = !message; $("#undo-discard").hidden = !undo; };
   const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
   const canEdit = () => !demo;
   const snapshotPanel = $<HTMLDetailsElement>(".snapshot-panel");
+  const discardDialog = $<HTMLDialogElement>("#discard-dialog");
   document.addEventListener("pointerdown", (event) => {
-    if (event.target instanceof Node && !snapshotPanel.contains(event.target)) snapshotPanel.open = false;
+    if (event.target instanceof Node && !snapshotPanel.contains(event.target) && !document.querySelector("dialog[open]")) snapshotPanel.open = false;
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && snapshotPanel.open && !document.querySelector("dialog[open]")) {
@@ -145,7 +151,11 @@ export function setupHistory(
     $("#add-technology").title = canEdit() ? "Add a technology to a revision" : "Demo history is read-only";
     $("#import-history").toggleAttribute("disabled", demo);
     $("#export-history").toggleAttribute("disabled", demo);
-    text("#storage-label", demo ? "Demo only · no changes saved" : "Browser drafts · export to share with the team");
+    let drafts = JSON.stringify(recorded) !== JSON.stringify(published) || !!warning;
+    try { drafts = hasLocalDrafts(published, recorded, localStorage.getItem(storageKey)); } catch { /* Keep the in-memory draft status when storage is unavailable. */ }
+    $("#discard-history").toggleAttribute("disabled", demo || !drafts);
+    $("#undo-discard").toggleAttribute("disabled", demo);
+    text("#storage-label", demo ? "Demo · read-only" : drafts ? "Browser drafts" : "Published history");
     const jump = $<HTMLInputElement>("#snapshot-date-jump");
     jump.min = active.snapshots[0].createdAt.slice(0, 10);
     jump.max = active.snapshots.at(-1)!.createdAt.slice(0, 10);
@@ -188,7 +198,7 @@ export function setupHistory(
   }
   function toggleDemo() {
     stop(); demo = !demo;
-    active = demo ? demoHistory(initial.snapshots.at(-1)!.data) : recorded;
+    active = demo ? demoHistory(recorded.snapshots.at(-1)!.data) : recorded;
     layouts = historyLayouts(active);
     select(active.snapshots.length - 1, false);
   }
@@ -203,6 +213,7 @@ export function setupHistory(
       catch { throw new Error("Another draft or tab has a different history. Export your current history, then reload to review the saved versions before making another change."); }
     }
     localStorage.setItem(storageKey, JSON.stringify(next));
+    discarded = undefined;
     recorded = next; active = next; layouts = nextLayouts;
     stop(); select(active.snapshots.findIndex((snapshot) => snapshot.id === selectedId));
     notice("Revision saved in this browser. Export the history to share it or commit it to Git.");
@@ -346,6 +357,47 @@ export function setupHistory(
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
   $("#import-history").addEventListener("click", () => $("#history-file").click());
+  $("#discard-history").addEventListener("click", () => {
+    if (demo) return;
+    stop(); render();
+    try {
+      discardExpected = localStorage.getItem(storageKey);
+      $("#discard-error").hidden = true;
+      discardDialog.showModal();
+    } catch (error) { notice(error instanceof Error ? error.message : "Browser edits could not be accessed."); }
+  });
+  $("#cancel-discard").addEventListener("click", () => discardDialog.close());
+  $("#confirm-discard").addEventListener("click", () => {
+    try {
+      const nextLayouts = historyLayouts(published);
+      const restored = discardBrowserDrafts(published, localStorage, storageKey, discardExpected);
+      discarded = { history: recorded, stored: discardExpected, selectedId: active.snapshots[selected].id };
+      recorded = restored; active = restored; layouts = nextLayouts;
+      stop(); select(active.snapshots.length - 1);
+      discardDialog.close();
+      notice("Browser edits discarded. Showing the published radar.", true);
+    } catch (error) {
+      text("#discard-error", error instanceof Error ? error.message : "Could not discard browser edits.");
+      $("#discard-error").hidden = false;
+    }
+  });
+  discardDialog.addEventListener("close", () => {
+    if ($<HTMLButtonElement>("#discard-history").disabled) snapshotPanel.querySelector("summary")!.focus();
+    else $("#discard-history").focus();
+  });
+  $("#undo-discard").addEventListener("click", () => {
+    if (!discarded || demo) return;
+    try {
+      if (localStorage.getItem(storageKey) !== null || JSON.stringify(recorded) !== JSON.stringify(published))
+        throw new Error("New browser edits exist. Export them before restoring the discarded draft.");
+      const backup = discarded;
+      const nextLayouts = historyLayouts(backup.history);
+      localStorage.setItem(storageKey, backup.stored ?? JSON.stringify(backup.history));
+      recorded = backup.history; active = recorded; layouts = nextLayouts; discarded = undefined;
+      stop(); select(active.snapshots.findIndex((snapshot) => snapshot.id === backup.selectedId));
+      notice("Discarded browser edits restored.");
+    } catch (error) { notice(error instanceof Error ? error.message : "Could not restore browser edits.", true); }
+  });
   $("#history-file").addEventListener("change", async (event) => {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -363,7 +415,7 @@ export function setupHistory(
     stop();
     const params = new URLSearchParams(location.search);
     demo = params.get("demo") === "1";
-    active = demo ? demoHistory(initial.snapshots.at(-1)!.data) : recorded;
+    active = demo ? demoHistory(recorded.snapshots.at(-1)!.data) : recorded;
     layouts = historyLayouts(active);
     const index = active.snapshots.findIndex((snapshot) => snapshot.id === params.get("snapshot"));
     select(index < 0 ? active.snapshots.length - 1 : index, false, false);
